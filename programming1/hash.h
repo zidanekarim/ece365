@@ -58,7 +58,7 @@ class hashTable {
     bool isDeleted {false};
     void *pv {nullptr};
 
-    hashItem() = default;
+    hashItem() = default; 
   };
 
   int capacity; // The current capacity of the hash table.
