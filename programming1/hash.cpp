@@ -19,22 +19,25 @@ int hashTable::insert(const std::string &key, void *pv) {
         pos = (pos + 1) % capacity; 
     }
 
-    data[pos] = hashItem{key, true, false, pv};
+    data[pos].key = key;
+    data[pos].isOccupied = true;
+    data[pos].isDeleted = false;
+    data[pos].pv = pv;
     filled++;
     return 0;
 }
 
-hashTable::hashTable(int size = 0) {
+hashTable::hashTable(int size) {
     capacity = getPrime(size);
     filled=0;
     data.resize(capacity);
 } 
 
 bool hashTable::contains(const std::string &key) { // redundant within class but useful as public
-    return findPos(key) != -1;
+    return hashTable::findPos(key) != -1;
 }
 
-int hash(const std::string &key) {
+int hashTable::hash(const std::string &key) {
     // DJB2 algorithm, which I sourced from the internet
     unsigned int hash_val = 5381;
     for (char c : key) {
@@ -43,25 +46,25 @@ int hash(const std::string &key) {
 
     return hash_val % capacity;
 }
-bool rehash() {
+bool hashTable::rehash() {
     int nextPrime = getPrime(capacity  * 2);
     if (nextPrime <= capacity) return false;
     std::vector<hashItem> tempData = data;
     capacity = nextPrime;
     try {
-        capacity = newCapacity;
+        capacity = nextPrime;
         data.clear(); 
         data.resize(capacity);
     } catch (const std::bad_alloc &) {
         // restoring state
-        data = oldData;
-        capacity = oldData.size();
+        data = tempData;
+        capacity = tempData.size();
         return false;
     }
     
     filled = 0;
 
-    for (const auto &item : oldData) { // from Google, reference saves memory footprint here 
+    for (const auto &item : tempData) { // from Google, reference saves memory footprint here 
         if (item.isOccupied && !item.isDeleted) { // again not necessary here but future-proofing
             insert(item.key, item.pv); // insert increases filled count
         }
@@ -72,7 +75,7 @@ bool rehash() {
 
 
 
-void *getPointer(const std::string &key, bool *b) {
+void* hashTable::getPointer(const std::string &key, bool *b) {
     int index = findPos(key);
     if (index == -1) { // avoiding contains here to not duplicate operation
         if (b != nullptr) {
@@ -88,7 +91,7 @@ void *getPointer(const std::string &key, bool *b) {
 }
 
 
-int setPointer(const std::string &key, void *pv) {
+int hashTable::setPointer(const std::string &key, void *pv) {
     int index = findPos(key);
     if (index == -1) { // avoiding contains here to not duplicate operation
         return 1; 
@@ -98,21 +101,23 @@ int setPointer(const std::string &key, void *pv) {
 }
 
 
-bool remove(const std::string &key); // this function im not implementing right now since i dont know what it wants
+//bool hashTable::remove(const std::string &key); // this function im not implementing right now since i dont know what it wants
 
 
 
-static unsigned int hashTable::hashItem::getPrime(int size) {
-    auto isPrime [](int n) -> bool  { // lambda function, will use trial division here
+unsigned int hashTable::getPrime(int size) {
+    auto isPrime = [](int n) -> bool  { // lambda function, will use trial division here
         if (n <= 1) return false;
-        if (n == 3) return true;
-        for (int i = 5; i * i <= n; i += 6) { // https://math.stackexchange.com/questions/616093/why-every-prime-3-is-represented-a
-            if (n % i == 0 || n % (i + 2) == 0) { // prev knowledge algorithm to compute if number is prime
+        if (n <= 3) return true;
+        if (n % 2 == 0 || n % 3 == 0) return false;
+
+        for (int i = 5; i * i <= n; i += 6) {
+            if (n % i == 0 || n % (i + 2) == 0) {
                 return false;
             }
-        }   
+        }
         return true;
-    }
+    };
     
     
     int start = size;
@@ -127,3 +132,16 @@ static unsigned int hashTable::hashItem::getPrime(int size) {
 }
 
 
+int hashTable::findPos(const std::string &key) {
+    int pos = hash(key) % capacity; // according to hash algo defined in hash()
+    if (pos < 0) pos += capacity;
+
+    while (data[pos].isOccupied) { 
+        if (!data[pos].isDeleted && data[pos].key == key) {
+            return pos;
+        }
+        pos = (pos + 1) % capacity;
+    }
+
+    return -1;
+}
