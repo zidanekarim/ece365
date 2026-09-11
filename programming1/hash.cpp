@@ -30,14 +30,45 @@ hashTable::hashTable(int size = 0) {
     data.resize(capacity);
 } 
 
-bool hashTable::contains(const std::string &key) {
+bool hashTable::contains(const std::string &key) { // redundant within class but useful as public
     return findPos(key) != -1;
 }
 
 int hash(const std::string &key) {
-    
+    // DJB2 algorithm, which I sourced from the internet
+    unsigned int hash_val = 5381;
+    for (char c : key) {
+        hash_val = (hash_val * 33) + c;
+    }
+
+    return hash_val % capacity;
 }
-bool rehash();
+bool rehash() {
+    int nextPrime = getPrime(capacity  * 2);
+    if (nextPrime <= capacity) return false;
+    std::vector<hashItem> tempData = data;
+    capacity = nextPrime;
+    try {
+        capacity = newCapacity;
+        data.clear(); 
+        data.resize(capacity);
+    } catch (const std::bad_alloc &) {
+        // restoring state
+        data = oldData;
+        capacity = oldData.size();
+        return false;
+    }
+    
+    filled = 0;
+
+    for (const auto &item : oldData) { // from Google, reference saves memory footprint here 
+        if (item.isOccupied && !item.isDeleted) { // again not necessary here but future-proofing
+            insert(item.key, item.pv); // insert increases filled count
+        }
+    }
+    
+    return true;
+}
 
 
 
