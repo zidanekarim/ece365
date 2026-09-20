@@ -62,32 +62,50 @@ int spellCheck(const string &inputFile, const string &outputFile, hashTable &tab
             continue;
         }
         string wordbuilder;
+        bool hasDigit = false; // code broke when there was trailing digits so i had to do this all
+
+
+
         for (int i = 0; i < line.length();) {
             char c = tolower(static_cast<unsigned char>(line[i]));
 
             if (isWordChar(c)) {
                 wordbuilder += c;
+                if (isdigit(static_cast<unsigned char>(c))) {
+                    hasDigit = true;
+                }
 
                 // length check
-                if (wordbuilder.length() > 20) { 
-                    outFile << "Long word at line " << lineCounter << ", starts: " << wordbuilder.substr(0, 20) << "\n";
-                    
-                    // skips rest of word 
-                    while (i < line.length() && isWordChar(line[i])) {
-                        i++;
+                if (wordbuilder.length() > 20) {
+                    // this peek stuff is because we need to check for trailing digits
+                    int peek = i + 1;
+                    while (peek < line.length() && isWordChar(line[peek])) {
+                        if (isdigit(static_cast<unsigned char>(line[peek]))) {
+                            hasDigit = true;
+                        }
+                        peek++;
                     }
-                    
+
+                    // only report as a long word if it doesnt contain digits
+                    if (!hasDigit) {
+                        outFile << "Long word at line " << lineCounter << ", starts: " << wordbuilder.substr(0, 20) << "\n";
+                    }
+
+                    // skips rest of word
+                    i = peek;
                     wordbuilder.clear();
-                    continue; 
+                    hasDigit = false;
+                    continue;
                 }
                 i++;
             } else {
                 // actual spell check here
                 if (!wordbuilder.empty()) {
-                    if (!table.contains(wordbuilder)) {
+                    if (!hasDigit && !table.contains(wordbuilder)) {
                         outFile << "Unknown word at line " << lineCounter << ": " << wordbuilder << "\n";
                     }
                     wordbuilder.clear();
+                    hasDigit = false;
                 }
                 i++;
             }
@@ -95,11 +113,12 @@ int spellCheck(const string &inputFile, const string &outputFile, hashTable &tab
 
         // Check for any word that ends right at the end of the line
         if (!wordbuilder.empty()) {
-            if (!table.contains(wordbuilder)) {
+            if (!hasDigit && !table.contains(wordbuilder)) {
                 outFile << "Unknown word at line " << lineCounter << ": " << wordbuilder << "\n";
             }
             wordbuilder.clear();
-        }
+            hasDigit = false;
+        }   
 
         
     }
