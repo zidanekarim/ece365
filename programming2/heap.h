@@ -33,7 +33,7 @@ class heap {
     std::vector<node> data; 
     hashTable mapping; 
     
-    void percolateUp(int posCur);
+    void percolateUp(int posCur); // taken from professor's examples
     void percolateDown(int posCur);
     int getPos(node *pn);
 
