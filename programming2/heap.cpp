@@ -10,7 +10,8 @@ functions and there wasn't a point in arbitrarily rewriting such comments.
 heap::heap(int capacity) {
     size = 0;
     this->capacity = capacity;
-    data.resize(capacity);
+    data.resize(capacity+1); // because 0 slot not used according to bits
+    mapping = hashTable(capacity*2); 
 }
 
 // insert - Inserts a new node into the binary heap
@@ -158,7 +159,7 @@ void heap::percolateDown(int posCur) {
     node temp = data[posCur];
     int child;
 
-    while (posCur * 2 <= size) {
+    while (posCur * 2 <= size) { 
         child = posCur * 2;
         // pretty much same as percolate up, but we check the children instead of the parent.
         if (child < size && data[child + 1].key < data[child].key) {
