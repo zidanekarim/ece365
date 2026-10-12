@@ -4,6 +4,11 @@
 #include <vector>
 #include <string>
 
+/*
+Zidane Karim (ECE365)
+Creates priority queue using a binary heap
+*/
+
 class heap {
     public:
     heap(int capacity = 0);
@@ -33,5 +38,5 @@ class heap {
     int getPos(node *pn);
 
 
-    }
+    };
 #endif
